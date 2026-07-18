@@ -30,6 +30,15 @@ All dates are `DD-MM-YYYY` unless stated otherwise.
 | `create_stock_item` | `name`, `group`, `unit`, `openingBalance?`, `openingRate?` | Creates a new stock item |
 | `create_voucher` | `voucherType`, `date`, `narration?`, `debitLedger`, `creditLedger`, `amount` | Creates a two-leg voucher (Payment, Receipt, Sales, Purchase, Journal, ...) |
 
+## SQL cache tools
+
+| Tool | Args | Effect |
+|---|---|---|
+| `sync_to_sql` | — | Loads ledgers/groups/stock items into an in-memory SQL cache (PGLite) |
+| `query_sql` | `sql` | Runs a read-only `SELECT` against that cache |
+
+See [SQL_CACHE.md](./SQL_CACHE.md) for schema and examples.
+
 Write tools return a plain-text summary: `Success. Created: N. ...` or
 `Failed. Tally reported N error(s). ...` — always check the response text
 before assuming a write succeeded, since Tally reports errors inside the XML
@@ -39,10 +48,13 @@ body rather than via HTTP status.
 
 1. Add an entry to the `tools` array in [`src/tools.ts`](../src/tools.ts)
    with a `name`, `description`, and JSON Schema `inputSchema`.
-2. Add a case to the `switch` in `handleTool` in the same file. For reads,
-   build XML with `reportXml(...)` or `buildCollectionXml(...)`. For writes,
-   follow the pattern of `createLedgerXml`/`createVoucherXml`.
-3. Run `npm run build` to type-check.
-4. If it's a report you haven't used before, confirm the exact `REPORTNAME`
+2. If the request needs new XML shape, add a `.xml.njk` file to
+   [`templates/`](../templates/) and render it with `render(name, context)`
+   from `src/templates.ts` (see the existing `report.xml.njk` /
+   `create-ledger.xml.njk` for the two shapes: Export Data vs Import Data).
+3. Add a case to the `switch` in `handleTool` in `src/tools.ts` that builds
+   the XML and calls `tallyRequest`.
+4. Run `npm run build` to type-check.
+5. If it's a report you haven't used before, confirm the exact `REPORTNAME`
    string by checking what Tally calls it on-screen — see
    [TALLY_XML_GUIDE.md](./TALLY_XML_GUIDE.md).
