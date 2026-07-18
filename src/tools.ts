@@ -200,6 +200,50 @@ export const tools = [
     },
   },
   {
+    name: "update_stock_item",
+    description: "Update the group and/or unit of an existing stock item in TallyPrime",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Exact name of the existing stock item" },
+        group: { type: "string", description: "New stock group" },
+        unit: { type: "string", description: "New unit of measure" },
+      },
+      required: ["name", "group", "unit"],
+    },
+  },
+  {
+    name: "delete_stock_item",
+    description: "Delete a stock item from TallyPrime. Fails if it has transactions posted against it.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Exact name of the stock item to delete" },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "update_voucher",
+    description:
+      "Update an existing voucher in TallyPrime, replacing its ledger entries and narration. " +
+      "The voucher is matched by type + date + voucher number, so that combination must be unique " +
+      "and must exactly match an existing voucher (use get_ledger_vouchers or get_vouchers first to confirm it).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        voucherType: { type: "string", description: "Voucher type, e.g. 'Payment', 'Receipt', 'Journal'" },
+        voucherNumber: { type: "string", description: "Exact voucher number of the voucher to update" },
+        date: { type: "string", description: "Existing voucher's date in DD-MM-YYYY format" },
+        narration: { type: "string", description: "New narration / description for the voucher" },
+        debitLedger: { type: "string", description: "Ledger name to debit" },
+        creditLedger: { type: "string", description: "Ledger name to credit" },
+        amount: { type: "number", description: "New amount of the transaction" },
+      },
+      required: ["voucherType", "voucherNumber", "date", "debitLedger", "creditLedger", "amount"],
+    },
+  },
+  {
     name: "sync_to_sql",
     description:
       "Pull ledgers, groups, stock items, and vouchers (last 365 days) from TallyPrime into a local " +
@@ -251,6 +295,35 @@ function createVoucherXml(args: {
 
 function createGroupXml(name: string, parent: string): string {
   return render("create-group.xml.njk", { name, parent });
+}
+
+function updateStockItemXml(name: string, group: string, unit: string): string {
+  return render("update-stock-item.xml.njk", { name, group, unit });
+}
+
+function deleteStockItemXml(name: string): string {
+  return render("delete-stock-item.xml.njk", { name });
+}
+
+function updateVoucherXml(args: {
+  voucherType: string;
+  voucherNumber: string;
+  date: string;
+  narration?: string;
+  debitLedger: string;
+  creditLedger: string;
+  amount: number;
+}): string {
+  const { voucherType, voucherNumber, date, narration, debitLedger, creditLedger, amount } = args;
+  return render("update-voucher.xml.njk", {
+    voucherType,
+    voucherNumber,
+    tallyDate: date.split("-").reverse().join(""),
+    narration: narration ?? "",
+    debitLedger,
+    creditLedger,
+    amount,
+  });
 }
 
 function createStockItemXml(args: {
@@ -434,6 +507,35 @@ export async function handleTool(
         openingBalance: openingBalance ?? 0,
         openingRate: openingRate ?? 0,
       });
+      const result = await tallyRequest(xml);
+      return checkImportResult(result);
+    }
+
+    case "update_stock_item": {
+      const { name: itemName, group, unit } = args as { name: string; group: string; unit: string };
+      const xml = updateStockItemXml(itemName, group, unit);
+      const result = await tallyRequest(xml);
+      return checkImportResult(result);
+    }
+
+    case "delete_stock_item": {
+      const { name: itemName } = args as { name: string };
+      const xml = deleteStockItemXml(itemName);
+      const result = await tallyRequest(xml);
+      return checkImportResult(result);
+    }
+
+    case "update_voucher": {
+      const voucherArgs = args as {
+        voucherType: string;
+        voucherNumber: string;
+        date: string;
+        narration?: string;
+        debitLedger: string;
+        creditLedger: string;
+        amount: number;
+      };
+      const xml = updateVoucherXml(voucherArgs);
       const result = await tallyRequest(xml);
       return checkImportResult(result);
     }

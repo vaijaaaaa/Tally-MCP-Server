@@ -1,0 +1,30 @@
+<ENVELOPE>
+  <HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER>
+  <BODY>
+    <IMPORTDATA>
+      <REQUESTDESC>
+        <REPORTNAME>Vouchers</REPORTNAME>
+      </REQUESTDESC>
+      <REQUESTDATA>
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <VOUCHER VCHTYPE="{{ voucherType }}" ACTION="Alter">
+            <DATE>{{ tallyDate }}</DATE>
+            <VOUCHERTYPENAME>{{ voucherType }}</VOUCHERTYPENAME>
+            <VOUCHERNUMBER>{{ voucherNumber }}</VOUCHERNUMBER>
+            <NARRATION>{{ narration }}</NARRATION>
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>{{ debitLedger }}</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+              <AMOUNT>-{{ amount }}</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>{{ creditLedger }}</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+              <AMOUNT>{{ amount }}</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>
+      </REQUESTDATA>
+    </IMPORTDATA>
+  </BODY>
+</ENVELOPE>
