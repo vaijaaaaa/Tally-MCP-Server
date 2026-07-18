@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon.png" alt="Tally MCP Server" width="180">
+</p>
+
 # Tally MCP Server
 
 A Model Context Protocol (MCP) server that lets Claude read from and write to

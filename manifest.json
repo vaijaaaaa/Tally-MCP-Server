@@ -13,6 +13,7 @@
     "url": "https://github.com/vaijaaaaa/Tally-MCP-Server"
   },
   "license": "ISC",
+  "icon": "assets/icon.png",
   "server": {
     "type": "node",
     "entry_point": "dist/index.js",
