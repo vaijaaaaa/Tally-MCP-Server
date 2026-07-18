@@ -29,6 +29,9 @@ All dates are `DD-MM-YYYY` unless stated otherwise.
 | `create_group` | `name`, `parent` | Creates a new account group |
 | `create_stock_item` | `name`, `group`, `unit`, `openingBalance?`, `openingRate?` | Creates a new stock item |
 | `create_voucher` | `voucherType`, `date`, `narration?`, `debitLedger`, `creditLedger`, `amount` | Creates a two-leg voucher (Payment, Receipt, Sales, Purchase, Journal, ...) |
+| `update_voucher` | `voucherType`, `voucherNumber`, `date`, `narration?`, `debitLedger`, `creditLedger`, `amount` | Replaces the ledger entries/narration of an existing voucher. **Matched by type + date + voucher number** — that combination must uniquely identify the voucher (confirm with `get_ledger_vouchers` first). |
+| `update_stock_item` | `name`, `group`, `unit` | Updates an existing stock item's group and unit |
+| `delete_stock_item` | `name` | Deletes a stock item (fails if it has transactions posted against it) |
 
 ## SQL cache tools
 

@@ -11,6 +11,16 @@ TallyPrime itself still has to be reachable from wherever this process runs
 — this doesn't remote-control Tally, it just lets the *MCP client* be remote
 from the *MCP server*, while the server stays local to Tally.
 
+**Tally on a separate machine:** `TALLY_URL` isn't hardcoded to `localhost`
+— point it at any reachable host, e.g. `TALLY_URL=http://192.168.1.50:9000`,
+to run this server on one machine and TallyPrime on another (as long as
+Tally's HTTP gateway port is reachable on the network between them).
+
+**Restarts don't drop clients:** each `POST /mcp` request is handled by a
+fresh, independent `Server`/`transport` pair (see "Deployment notes" below)
+— there's no shared client registry for a server restart to wipe out. Each
+client just reconnects on its next request.
+
 ## Running
 
 ```bash
