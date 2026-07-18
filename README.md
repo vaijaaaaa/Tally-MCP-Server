@@ -56,19 +56,18 @@ Restart Claude Desktop. You should see a hammer/tools icon indicating the
 
 ## Available tools
 
-| Tool | Description |
-|---|---|
-| `get_ledgers` | List all ledgers (accounts) with parent group and closing balance |
-| `get_stock_items` | List all stock items with closing balance |
-| `get_vouchers` | Day Book vouchers for a date range |
-| `get_company_info` | Info about the currently open company |
-| `get_profit_and_loss` | P&L statement for a date range |
-| `get_balance_sheet` | Balance Sheet as of a given date |
-| `get_trial_balance` | Trial Balance for a date range |
-| `create_ledger` | Create a new ledger under a parent group |
-| `create_voucher` | Create a voucher (Payment, Receipt, Sales, Purchase, Journal) with a debit/credit ledger pair |
+15 tools total — read (ledgers, stock, groups, voucher types, cost centres,
+day book, ledger vouchers, company info, P&L, balance sheet, trial balance,
+stock summary, bills receivable/payable) and write (create ledger, group,
+stock item, voucher). Full reference with args: **[docs/TOOLS.md](docs/TOOLS.md)**.
 
 Dates use `DD-MM-YYYY` format, matching Tally's convention.
+
+## Docs
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — request flow, file responsibilities
+- [docs/TALLY_XML_GUIDE.md](docs/TALLY_XML_GUIDE.md) — how Tally's XML gateway works, gotchas
+- [docs/TOOLS.md](docs/TOOLS.md) — full tool reference + how to add a new tool
 
 ## Project structure
 
@@ -98,6 +97,7 @@ src/
 
 ## Roadmap / not yet supported
 
-- Editing or deleting existing vouchers/ledgers
-- Inventory vouchers (Stock Journal, etc.)
-- GST-specific reports
+- Editing or deleting existing vouchers/ledgers/masters
+- Inventory vouchers (Stock Journal, Manufacturing Journal, etc.)
+- GST-specific reports (GSTR-1, GSTR-3B)
+- Multi-company support (currently always targets whichever company is open)
