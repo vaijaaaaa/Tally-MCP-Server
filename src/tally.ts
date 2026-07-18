@@ -1,4 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
+import { render } from "./templates.js";
 
 const TALLY_URL = process.env.TALLY_URL ?? "http://localhost:9000";
 
@@ -60,29 +61,5 @@ export function buildCollectionXml(
   type: string,
   fields: string[]
 ): string {
-  const fetchList = fields.map((f) => `<FETCH>${f}</FETCH>`).join("\n");
-  return `
-<ENVELOPE>
-  <HEADER>
-    <TALLYREQUEST>Export Data</TALLYREQUEST>
-  </HEADER>
-  <BODY>
-    <EXPORTDATA>
-      <REQUESTDESC>
-        <REPORTNAME>List of Accounts</REPORTNAME>
-        <STATICVARIABLES>
-          <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-        </STATICVARIABLES>
-      </REQUESTDESC>
-      <REQUESTDATA>
-        <TALLYMESSAGE xmlns:UDF="TallyUDF">
-          <COLLECTION SYSNAME="${collectionName}">
-            <TYPE>${type}</TYPE>
-            ${fetchList}
-          </COLLECTION>
-        </TALLYMESSAGE>
-      </REQUESTDATA>
-    </EXPORTDATA>
-  </BODY>
-</ENVELOPE>`.trim();
+  return render("collection.xml.njk", { collectionName, type, fields });
 }

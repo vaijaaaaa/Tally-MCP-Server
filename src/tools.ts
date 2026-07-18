@@ -1,5 +1,7 @@
 import { tallyRequest, buildCollectionXml } from "./tally.js";
 import { cleanTallyResult } from "./clean.js";
+import { render } from "./templates.js";
+import { syncAll, runSql } from "./db.js";
 
 export const tools = [
   {
@@ -197,61 +199,35 @@ export const tools = [
       required: ["name", "group", "unit"],
     },
   },
+  {
+    name: "sync_to_sql",
+    description:
+      "Pull ledgers, groups, stock items, and vouchers (last 365 days) from TallyPrime into a local " +
+      "in-memory SQL cache, so query_sql can run fast arbitrary queries without hitting Tally each time",
+    inputSchema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "query_sql",
+    description:
+      "Run a read-only SQL SELECT query against the local cache populated by sync_to_sql. " +
+      "Tables: ledgers(name, parent, closing_balance), groups(name, parent), " +
+      "stock_items(name, parent, closing_balance), vouchers(date, voucher_type, ledger, amount, narration)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sql: { type: "string", description: "A single SELECT statement" },
+      },
+      required: ["sql"],
+    },
+  },
 ];
 
-function xmlEscape(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function reportXml(
-  reportName: string,
-  staticVars: Record<string, string>
-): string {
-  const vars = Object.entries(staticVars)
-    .map(([k, v]) => `<${k}>${xmlEscape(v)}</${k}>`)
-    .join("\n");
-  return `
-<ENVELOPE>
-  <HEADER><TALLYREQUEST>Export Data</TALLYREQUEST></HEADER>
-  <BODY>
-    <EXPORTDATA>
-      <REQUESTDESC>
-        <REPORTNAME>${reportName}</REPORTNAME>
-        <STATICVARIABLES>
-          <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-          ${vars}
-        </STATICVARIABLES>
-      </REQUESTDESC>
-    </EXPORTDATA>
-  </BODY>
-</ENVELOPE>`.trim();
+function reportXml(reportName: string, staticVariables: Record<string, string>): string {
+  return render("report.xml.njk", { reportName, staticVariables: Object.entries(staticVariables) });
 }
 
 function createLedgerXml(name: string, parent: string, openingBalance: number): string {
-  return `
-<ENVELOPE>
-  <HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER>
-  <BODY>
-    <IMPORTDATA>
-      <REQUESTDESC>
-        <REPORTNAME>All Masters</REPORTNAME>
-      </REQUESTDESC>
-      <REQUESTDATA>
-        <TALLYMESSAGE xmlns:UDF="TallyUDF">
-          <LEDGER NAME="${xmlEscape(name)}" ACTION="Create">
-            <NAME>${xmlEscape(name)}</NAME>
-            <PARENT>${xmlEscape(parent)}</PARENT>
-            <OPENINGBALANCE>${openingBalance}</OPENINGBALANCE>
-          </LEDGER>
-        </TALLYMESSAGE>
-      </REQUESTDATA>
-    </IMPORTDATA>
-  </BODY>
-</ENVELOPE>`.trim();
+  return render("create-ledger.xml.njk", { name, parent, openingBalance });
 }
 
 function createVoucherXml(args: {
@@ -263,58 +239,18 @@ function createVoucherXml(args: {
   amount: number;
 }): string {
   const { voucherType, date, narration, debitLedger, creditLedger, amount } = args;
-  return `
-<ENVELOPE>
-  <HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER>
-  <BODY>
-    <IMPORTDATA>
-      <REQUESTDESC>
-        <REPORTNAME>Vouchers</REPORTNAME>
-      </REQUESTDESC>
-      <REQUESTDATA>
-        <TALLYMESSAGE xmlns:UDF="TallyUDF">
-          <VOUCHER VCHTYPE="${xmlEscape(voucherType)}" ACTION="Create">
-            <DATE>${date.split("-").reverse().join("")}</DATE>
-            <VOUCHERTYPENAME>${xmlEscape(voucherType)}</VOUCHERTYPENAME>
-            <NARRATION>${xmlEscape(narration ?? "")}</NARRATION>
-            <ALLLEDGERENTRIES.LIST>
-              <LEDGERNAME>${xmlEscape(debitLedger)}</LEDGERNAME>
-              <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
-              <AMOUNT>-${amount}</AMOUNT>
-            </ALLLEDGERENTRIES.LIST>
-            <ALLLEDGERENTRIES.LIST>
-              <LEDGERNAME>${xmlEscape(creditLedger)}</LEDGERNAME>
-              <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
-              <AMOUNT>${amount}</AMOUNT>
-            </ALLLEDGERENTRIES.LIST>
-          </VOUCHER>
-        </TALLYMESSAGE>
-      </REQUESTDATA>
-    </IMPORTDATA>
-  </BODY>
-</ENVELOPE>`.trim();
+  return render("create-voucher.xml.njk", {
+    voucherType,
+    tallyDate: date.split("-").reverse().join(""),
+    narration: narration ?? "",
+    debitLedger,
+    creditLedger,
+    amount,
+  });
 }
 
 function createGroupXml(name: string, parent: string): string {
-  return `
-<ENVELOPE>
-  <HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER>
-  <BODY>
-    <IMPORTDATA>
-      <REQUESTDESC>
-        <REPORTNAME>All Masters</REPORTNAME>
-      </REQUESTDESC>
-      <REQUESTDATA>
-        <TALLYMESSAGE xmlns:UDF="TallyUDF">
-          <GROUP NAME="${xmlEscape(name)}" ACTION="Create">
-            <NAME>${xmlEscape(name)}</NAME>
-            <PARENT>${xmlEscape(parent)}</PARENT>
-          </GROUP>
-        </TALLYMESSAGE>
-      </REQUESTDATA>
-    </IMPORTDATA>
-  </BODY>
-</ENVELOPE>`.trim();
+  return render("create-group.xml.njk", { name, parent });
 }
 
 function createStockItemXml(args: {
@@ -325,49 +261,18 @@ function createStockItemXml(args: {
   openingRate: number;
 }): string {
   const { name, group, unit, openingBalance, openingRate } = args;
-  return `
-<ENVELOPE>
-  <HEADER><TALLYREQUEST>Import Data</TALLYREQUEST></HEADER>
-  <BODY>
-    <IMPORTDATA>
-      <REQUESTDESC>
-        <REPORTNAME>All Masters</REPORTNAME>
-      </REQUESTDESC>
-      <REQUESTDATA>
-        <TALLYMESSAGE xmlns:UDF="TallyUDF">
-          <STOCKITEM NAME="${xmlEscape(name)}" ACTION="Create">
-            <NAME>${xmlEscape(name)}</NAME>
-            <PARENT>${xmlEscape(group)}</PARENT>
-            <BASEUNITS>${xmlEscape(unit)}</BASEUNITS>
-            <OPENINGBALANCE>${openingBalance}</OPENINGBALANCE>
-            <OPENINGRATE>${openingRate}</OPENINGRATE>
-            <OPENINGVALUE>${openingBalance * openingRate}</OPENINGVALUE>
-          </STOCKITEM>
-        </TALLYMESSAGE>
-      </REQUESTDATA>
-    </IMPORTDATA>
-  </BODY>
-</ENVELOPE>`.trim();
+  return render("create-stock-item.xml.njk", {
+    name,
+    group,
+    unit,
+    openingBalance,
+    openingRate,
+    openingValue: openingBalance * openingRate,
+  });
 }
 
 function ledgerVouchersXml(ledgerName: string, from: string, to: string): string {
-  return `
-<ENVELOPE>
-  <HEADER><TALLYREQUEST>Export Data</TALLYREQUEST></HEADER>
-  <BODY>
-    <EXPORTDATA>
-      <REQUESTDESC>
-        <REPORTNAME>Ledger Vouchers</REPORTNAME>
-        <STATICVARIABLES>
-          <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-          <SVFROMDATE>${from}</SVFROMDATE>
-          <SVTODATE>${to}</SVTODATE>
-          <SVLEDGERNAME>${xmlEscape(ledgerName)}</SVLEDGERNAME>
-        </STATICVARIABLES>
-      </REQUESTDESC>
-    </EXPORTDATA>
-  </BODY>
-</ENVELOPE>`.trim();
+  return render("ledger-vouchers.xml.njk", { ledgerName, from, to });
 }
 
 function checkImportResult(result: unknown): string {
@@ -531,6 +436,15 @@ export async function handleTool(
       });
       const result = await tallyRequest(xml);
       return checkImportResult(result);
+    }
+
+    case "sync_to_sql": {
+      return await syncAll();
+    }
+
+    case "query_sql": {
+      const { sql } = args as { sql: string };
+      return await runSql(sql);
     }
 
     default:
