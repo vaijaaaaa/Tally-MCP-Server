@@ -1,15 +1,21 @@
 {
   "name": "tally-mcp-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "MCP server for interacting with Tally",
+  "type": "module",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
   },
-  "keywords": [],
+  "keywords": [
+    "mcp",
+    "tally",
+    "tally-erp"
+  ],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "fast-xml-parser": "^5.10.1",
