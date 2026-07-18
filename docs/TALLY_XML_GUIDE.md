@@ -44,12 +44,12 @@ Receivable, ...) — use `REPORTNAME` with `STATICVARIABLES` like
   <BODY>
     <EXPORTDATA>
       <REQUESTDESC>
-        <REPORTNAME>List of Accounts</REPORTNAME>
+        <REPORTNAME>Collection</REPORTNAME>
         <STATICVARIABLES><SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT></STATICVARIABLES>
       </REQUESTDESC>
       <REQUESTDATA>
         <TALLYMESSAGE xmlns:UDF="TallyUDF">
-          <COLLECTION SYSNAME="Ledger">
+          <COLLECTION NAME="Ledger">
             <TYPE>Ledger</TYPE>
             <FETCH>NAME</FETCH>
             <FETCH>PARENT</FETCH>
@@ -65,6 +65,14 @@ Receivable, ...) — use `REPORTNAME` with `STATICVARIABLES` like
 Collections are cheaper and give you exactly the fields you ask for. Reports
 mirror what you'd see on-screen in Tally and are better for anything
 aggregated (totals, P&L structure, etc.).
+
+`REPORTNAME` must be exactly `Collection` for a raw collection export —
+that's the magic value that tells Tally "run the ad-hoc `COLLECTION` defined
+in `REQUESTDATA`". Any other value (e.g. `List of Accounts`) makes Tally look
+up a named built-in report instead and silently ignore `TYPE`/`FETCH`
+entirely — `List of Accounts` in particular dumps every master (Groups,
+Ledgers, Stock Items, Voucher Types, Cost Centres, ...) regardless of what
+you asked for.
 
 ## Writing data — "Import Data"
 

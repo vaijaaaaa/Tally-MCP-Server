@@ -5,14 +5,14 @@
   <BODY>
     <EXPORTDATA>
       <REQUESTDESC>
-        <REPORTNAME>List of Accounts</REPORTNAME>
+        <REPORTNAME>Collection</REPORTNAME>
         <STATICVARIABLES>
           <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
         </STATICVARIABLES>
       </REQUESTDESC>
       <REQUESTDATA>
         <TALLYMESSAGE xmlns:UDF="TallyUDF">
-          <COLLECTION SYSNAME="{{ collectionName }}">
+          <COLLECTION NAME="{{ collectionName }}">
             <TYPE>{{ type }}</TYPE>
             {% for field in fields %}<FETCH>{{ field }}</FETCH>
             {% endfor %}
