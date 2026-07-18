@@ -1,7 +1,7 @@
 import {XMLParser} from "fast-xml-parser";
 
 const TALLY_URL = process.env.TALLY_URL ??
-"http:localhost:9000";
+"http://localhost:9000";
 
 const parser = new XMLParser ({ignoreAttributes: false});
 

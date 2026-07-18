@@ -1,32 +1,34 @@
-import { z } from "zod";
 import { tallyRequest, buildCollectionXml } from "./tally.js";
 
 export const tools = [
   {
     name: "get_ledgers",
     description: "Get all ledgers (accounts) from TallyPrime",
-    inputSchema: z.object({}),
+    inputSchema: { type: "object", properties: {}, required: [] },
   },
   {
     name: "get_stock_items",
     description: "Get all stock items from TallyPrime",
-    inputSchema: z.object({}),
+    inputSchema: { type: "object", properties: {}, required: [] },
   },
   {
     name: "get_vouchers",
     description: "Get vouchers from TallyPrime filtered by date range",
-    inputSchema: z.object({
-      from: z.string().describe("Start date in DD-MM-YYYY format"),
-      to: z.string().describe("End date in DD-MM-YYYY format"),
-    }),
+    inputSchema: {
+      type: "object",
+      properties: {
+        from: { type: "string", description: "Start date in DD-MM-YYYY format" },
+        to: { type: "string", description: "End date in DD-MM-YYYY format" },
+      },
+      required: ["from", "to"],
+    },
   },
   {
     name: "get_company_info",
     description: "Get the currently open company info from TallyPrime",
-    inputSchema: z.object({}),
+    inputSchema: { type: "object", properties: {}, required: [] },
   },
 ];
-
 
 export async function handleTool(
   name: string,
