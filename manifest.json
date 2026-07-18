@@ -1,7 +1,7 @@
 {
   "dxt_version": "0.1",
   "name": "tally-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "display_name": "Tally MCP Server",
   "description": "Read from and write to TallyPrime (ledgers, vouchers, P&L, balance sheet, stock, SQL cache) directly from Claude.",
   "long_description": "Connects Claude to a locally running TallyPrime via its XML/HTTP gateway. Supports reading ledgers, groups, stock items, vouchers, and standard reports (P&L, Balance Sheet, Trial Balance, Stock Summary, Bills Receivable/Payable), creating ledgers/groups/stock items/vouchers, and syncing data into a local SQL cache for fast ad-hoc querying.",
