@@ -388,7 +388,21 @@ export async function handleTool(
     }
 
     case "get_company_info": {
-      const xml = reportXml("Company", {});
+      // "Company" is a UI form in Tally's TDL, not an exportable report —
+      // requesting it via REPORTNAME throws "Error in TDL. 'Form:Company'
+      // No 'PARTS'!". The company object is fetched as a COLLECTION instead.
+      const xml = buildCollectionXml("Company", "Company", [
+        "NAME",
+        "STARTINGFROM",
+        "ENDINGAT",
+        "BOOKSFROM",
+        "ADDRESS",
+        "STATENAME",
+        "COUNTRYNAME",
+        "PINCODE",
+        "EMAIL",
+        "PANNO",
+      ]);
       const result = await tallyRequest(xml);
       return JSON.stringify(cleanTallyResult(result), null, 2);
     }
